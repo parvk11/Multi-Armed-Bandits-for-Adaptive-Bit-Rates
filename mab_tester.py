@@ -135,29 +135,6 @@ def plot_qoe_cdf(algorithm_results):
     plt.show()
 
 
-# def plot_qoe_boxplot(algorithm_results):
-#     labels = []
-#     data = []
-
-#     for algo, (_, _, qoe_trials) in algorithm_results.items():
-#         episode_qoes = []
-
-#         for test in qoe_trials:
-#             for episode_curve in qoe_trials[test]:
-#                 episode_qoes.append(np.sum(episode_curve))
-
-#         labels.append(algo_name(algo))
-#         data.append(np.array(episode_qoes))
-
-#     plt.figure(figsize=(8, 5))
-#     plt.boxplot(data, tick_labels=labels, showfliers=True)
-#     plt.ylabel("Total QoE per Episode")
-#     plt.title("QoE Distribution Across Algorithms")
-#     plt.xticks(rotation=25, ha="right")
-#     plt.grid(axis="y", alpha=0.3)
-#     plt.tight_layout()
-#     plt.show()
-
 def plot_qoe_boxplot(algorithm_results):
     """
     Boxplot of mean episode-level QoE.
@@ -260,4 +237,14 @@ if __name__ == "__main__":
             plot_learning_curves(algorithm_results, test)
 
     else:
-        main(sys.argv[1])
+        algorithm_results = {}
+
+        test_results, avg_qoe, curves =  main(sys.argv[1])
+        algorithm_results[sys.argv[1]] = (test_results, avg_qoe, curves)
+
+        plot_heatmap_and_bar(algorithm_results)
+        plot_qoe_cdf(algorithm_results)
+        plot_qoe_boxplot(algorithm_results)
+
+        for test in ordered_tests():
+            plot_learning_curves(algorithm_results, test)
