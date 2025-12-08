@@ -84,12 +84,13 @@ def read_test(config_path: str, print_output: bool):
 # ======================================================================================================================
 # MAIN
 # ======================================================================================================================
-def main(config_file: str, student_algo, verbose: bool, print_output=True) -> Tuple[float, float, float, float]:
+def main(config_file: str, student_algo, mab_algo, verbose: bool, print_output=True) -> Tuple[float, float, float, float]:
 	"""
 	Main loop. Runs the simulator with the given config file.
 	Args:
 		config_file : Path to the config file of this test
 		student_algo: Student algorithm to run
+		mab_algo: Multi-armed bandit algorithm to run
 		verbose : Whether to print verbose output
 		print_output : Whether to print any output at all
 	:return: Tuple with the total quality, rebuffer time, total variation, and user QoE for this test
@@ -125,7 +126,7 @@ def main(config_file: str, student_algo, verbose: bool, print_output=True) -> Tu
 		message.variation_coefficient = logger.switch_coeff
 
 		# Call student algorithm
-		quality = student.student_entrypoint(message)
+		quality = student.student_entrypoint(message, mab_algo)
 		if quality < 0 or quality >= len(chunk_qualities[chunknum]) or not isinstance(quality, int):
 			print("Student returned invalid quality, exiting")
 			break
@@ -149,5 +150,5 @@ def main(config_file: str, student_algo, verbose: bool, print_output=True) -> Tu
 
 
 if __name__ == '__main__':
-	assert len(sys.argv) >= 3, f'Proper usage: python3 {sys.argv[0]} [config_file] [student_algo] [-v --verbose]'
-	main(sys.argv[1], sys.argv[2], '-v' in sys.argv or '--verbose' in sys.argv)
+	assert len(sys.argv) >= 4 and sys.argv[3] in ['CUSUM-UCB', 'SlidingWindow-UCB', 'Discounted-UCB'], f'Proper usage: python3 {sys.argv[0]} [config_file] [student_algo] [MAB_algo] [-v --verbose]'
+	main(sys.argv[1], sys.argv[2], sys.argv[3], '-v' in sys.argv or '--verbose' in sys.argv)
