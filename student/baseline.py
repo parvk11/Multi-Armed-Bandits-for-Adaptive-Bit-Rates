@@ -67,19 +67,7 @@ class ClientMessage:
 
 def student_entrypoint(client_message: ClientMessage, mab_algo=None):
 	"""
-	Your mission, if you choose to accept it, is to build an algorithm for chunk bitrate selection that provides
-	the best possible experience for users streaming from your service.
-
-	Construct an algorithm below that selects a quality for a new chunk given the parameters in ClientMessage. Feel
-	free to create any helper function, variables, or classes as you wish.
-
-	Simulation does ~NOT~ run in real time. The code you write can be as slow and complicated as you wish without
-	penalizing your results. Focus on picking good qualities!
-
-	Also remember the config files are built for one particular client. You can (and should!) adjust the QoE metrics to
-	see how it impacts the final user score. How do algorithms work with a client that really hates rebuffering? What
-	about when the client doesn't care about variation? For what QoE coefficients does your algorithm work best, and
-	for what coefficients does it fail?
+	Baseline adaptive bitrate algorithm.
 
 	Args:
 		client_message : ClientMessage holding the parameters for this chunk and current client state.

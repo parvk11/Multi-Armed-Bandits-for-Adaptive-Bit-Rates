@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Stateless Thompson Sampling (Bayesian Bandit) for ABR.
 
@@ -5,6 +6,8 @@ Algorithm: Model each arm's reward as random variable.
 Maintain posterior distribution (Beta) for each arm.
 Sample from posteriors and pick arm with highest sample. 
 
+Advantage:  Natural Bayesian exploration, often better empirical performance
+than UCB on finite horizons. 
 """
 
 import numpy as np
@@ -64,13 +67,17 @@ class ThompsonSamplingMABState:
 _bandit = None
 
 
+# ============================================================================
 # CLIENT MESSAGE
+# ============================================================================
 class ClientMessage: 
     """Message from simulator to ABR algorithm."""
     pass
 
 
+# ============================================================================
 # REWARD COMPUTATION
+# ============================================================================
 def compute_reward(
     quality:  int,
     quality_bitrates: list,
@@ -81,6 +88,7 @@ def compute_reward(
     variation_coeff: float,
     past_quality_bitrate:  float = None,
 ) -> float:
+    """Compute reward (same as epsilon-greedy)."""
     n_qualities = len(quality_bitrates)
     bitrate = quality_bitrates[quality]
     
@@ -101,13 +109,26 @@ def compute_reward(
     reward = quality_score - rebuffering_penalty - variation_penalty
     return reward
 
+
+# ============================================================================
 # STUDENT ENTRYPOINT
+# ============================================================================
 def student_entrypoint(message:  ClientMessage) -> int:
     """
-    args:
+    Stateless Thompson Sampling Multi-Armed Bandit for ABR.
+    
+    Maintains Bayesian posterior (Beta distribution) for each quality level.
+    Samples and picks arm with highest sample.
+    
+    Advantages:
+    - No parameter tuning (like UCB)
+    - Often better empirical performance than UCB
+    - Natural exploration via posterior variance
+    
+    Args:
         message: ClientMessage with available qualities
     
-    returns:
+    Returns:
         Quality level (0 to num_qualities - 1)
     """
     global _bandit
@@ -126,7 +147,7 @@ def student_entrypoint(message:  ClientMessage) -> int:
 
 
 def update_bandit_reward(message: ClientMessage, quality: int):
-    # Update bandit with reward signal.
+    """Update bandit with reward signal."""
     global _bandit
     
     if _bandit is None:
@@ -148,5 +169,6 @@ def update_bandit_reward(message: ClientMessage, quality: int):
 
 
 def reset_bandit():
+    """Reset bandit for new episode."""
     global _bandit
     _bandit = None

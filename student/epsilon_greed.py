@@ -1,9 +1,13 @@
+#!/usr/bin/env python3
 """
 Stateless Epsilon-Greedy Multi-Armed Bandit for ABR. 
 
 Algorithm: Maintains empirical mean reward for each quality level. 
 Selects quality using epsilon-greedy (explore with probability epsilon, 
 exploit with probability 1-epsilon).
+
+This bandit has NO context about network conditions, buffer level, or 
+throughput.  It only learns:  "which quality level gives best average reward?"
 
 Reward computation: quality_score - rebuffering_penalty - variation_penalty
 """
@@ -12,7 +16,7 @@ import numpy as np
 from collections import deque
 
 # ============================================================================
-# GLOBAL STATE
+# GLOBAL STATE (persistent across chunks)
 # ============================================================================
 class EpsilonGreedyMABState:
     """Stateless epsilon-greedy bandit."""
@@ -58,12 +62,17 @@ class EpsilonGreedyMABState:
 _bandit = None
 
 
+# ============================================================================
 # CLIENT MESSAGE
+# ============================================================================
 class ClientMessage:
     """Message from simulator to ABR algorithm."""
     pass
 
+
+# ============================================================================
 # REWARD COMPUTATION
+# ============================================================================
 def compute_reward(
     quality:  int,
     quality_bitrates: list,
@@ -74,8 +83,15 @@ def compute_reward(
     variation_coeff: float,
     past_quality_bitrate: float = None,
 ) -> float:
-    # Reward = quality_score - rebuffering_risk - variation_penalty
+    """
+    Compute reward for this quality choice.
     
+    Reward = quality_score - rebuffering_risk - variation_penalty
+    
+    Note: This is an estimate of future QoE, computed before we know
+    the actual download time.  We use buffer level as a proxy for
+    rebuffering risk.
+    """
     n_qualities = len(quality_bitrates)
     bitrate = quality_bitrates[quality]
     
@@ -102,13 +118,22 @@ def compute_reward(
     return reward
 
 
+# ============================================================================
 # STUDENT ENTRYPOINT
+# ============================================================================
 def student_entrypoint(message: ClientMessage) -> int:
     """
-    args:
+    Stateless Epsilon-Greedy MAB for ABR.
+    
+    This algorithm:
+    - Has NO knowledge of network conditions, buffer state, or throughput
+    - Only learns: "which quality level gives the best average reward?"
+    - Uses epsilon-greedy exploration/exploitation
+    
+    Args:
         message: ClientMessage with available qualities and coefficients
     
-    returns:
+    Returns:
         Quality level (0 to num_qualities - 1)
     """
     global _bandit
@@ -132,6 +157,12 @@ def student_entrypoint(message: ClientMessage) -> int:
 
 
 def update_bandit_reward(message: ClientMessage, quality: int):
+    """
+    Called after download completes to update bandit with reward signal.
+    
+    This would need to be called from simulator or wrapped in a separate
+    evaluation loop that tracks actual outcomes.
+    """
     global _bandit
     
     if _bandit is None:
@@ -153,5 +184,6 @@ def update_bandit_reward(message: ClientMessage, quality: int):
 
 
 def reset_bandit():
+    """Reset bandit for a new episode."""
     global _bandit
     _bandit = None

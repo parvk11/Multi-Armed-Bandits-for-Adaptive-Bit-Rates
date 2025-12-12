@@ -61,17 +61,17 @@ def get_or_create_bandit(state: Tuple[str, str], n_arms: int):
     state_key = f"{state[0]}_{state[1]}"
     
     if state_key not in bandits:
-        print(f"Creating new bandit for state {state_key}")
+        # print(f"Creating new bandit for state {state_key}")
         
-        # if bandit_algo == 'SlidingWindow-UCB':
-        #     bandit = SlidingWindowUCB.SWUCB(nbArms=n_arms, tau=5, alpha=1.0)
-        # elif bandit_algo == 'Discounted-UCB':
-        #     bandit = DiscountedUCB(nbArms=n_arms, gamma=0.7)
-        # else:
         bandit = CUSUM_UCB.CUSUM_IndexPolicy(
-            nbArms=n_arms, horizon=1000, max_nb_random_events=100,
-            lmbda=1.0, min_number_of_observation_between_change_point=10,
-            full_restart_when_refresh=False, per_arm_restart=True, use_localization=True
+            nbArms=n_arms,
+            max_nb_random_events=50,
+            horizon=90,
+            lmbda=3.0,  # Sensitivity - lower = more sensitive to changes
+            min_number_of_observation_between_change_point=5,
+            full_restart_when_refresh=False,
+            per_arm_restart=True,
+            use_localization=True
         )
         
         bandit.startGame()
@@ -82,7 +82,10 @@ def get_or_create_bandit(state: Tuple[str, str], n_arms: int):
 
 def student_entrypoint(client_message: ClientMessage) -> int:
     """
-    State-based bandit using RAW rewards (no normalization).
+    State-based multi-bandit adaptive bitrate algorithm.
+    Each (throughput, buffer) state has its own CUSUM-UCB bandit.
+    The bandit chooses the quality level (action) for that state.
+
     The bandit algorithms can handle any reward scale.
     """
     global last_quality, previous_chunk_info
@@ -123,7 +126,7 @@ def student_entrypoint(client_message: ClientMessage) -> int:
     buffer_ratio = client_message.buffer_seconds_until_empty / client_message.buffer_max_size
     if buffer_ratio < 0.05:
         quality = max(0, quality-1)  # Force Q0
-        print(f"  [SAFETY] Buffer at {buffer_ratio:.1%}, forcing Q0")
+        # print(f"  [SAFETY] Buffer at {buffer_ratio:.1%}, forcing Q0")
     
     # Store info for next iteration
     previous_chunk_info = {
@@ -142,10 +145,14 @@ def student_entrypoint(client_message: ClientMessage) -> int:
 def compute_reward(quality: int, chunk_size_mb: float, download_time: float,
                    buffer_before: float, client_message: ClientMessage) -> float:
     """
-    Compute reward using RAW QoE score (no normalization).
+    Compute reward for a given chunk based on QoE metrics.
+    Reward is calculated as:
+        (Quality Coefficient) * (Bitrate in Mbps)
+        - (Rebuffering Coefficient) * (Rebuffering Time in seconds)
+        - (Variation Coefficient) * (Quality Variation in Mbps)
+        
     
-    The key insight: MAB algorithms don't need rewards in [0,1].
-    They work fine with any scale, as long as higher = better.
+    
     """
     global last_quality
     

@@ -1,9 +1,16 @@
+#!/usr/bin/env python3
 """
 Stateless UCB (Upper Confidence Bound) Multi-Armed Bandit for ABR. 
 
 Algorithm: Balances exploration and exploitation using confidence bounds.
 Selects arm with highest upper confidence bound.
 
+UCB = empirical_mean + sqrt(ln(total_pulls) / arm_pulls)
+
+This provides automatic (optimal) exploration-exploitation tradeoff
+without needing to tune epsilon.
+
+Advantage over epsilon-greedy:  Explores less but more intelligently. 
 """
 
 import numpy as np
@@ -14,6 +21,7 @@ import math
 # GLOBAL STATE
 # ============================================================================
 class UCBMABState:
+    """UCB multi-armed bandit."""
     
     def __init__(self, n_actions: int, c: float = 1.0):
         self.n_actions = n_actions
@@ -60,13 +68,17 @@ class UCBMABState:
 _bandit = None
 
 
+# ============================================================================
 # CLIENT MESSAGE
+# ============================================================================
 class ClientMessage: 
     """Message from simulator to ABR algorithm."""
     pass
 
 
+# ============================================================================
 # REWARD COMPUTATION
+# ============================================================================
 def compute_reward(
     quality: int,
     quality_bitrates:  list,
@@ -77,6 +89,7 @@ def compute_reward(
     variation_coeff: float,
     past_quality_bitrate: float = None,
 ) -> float:
+    """Compute reward (same as epsilon-greedy)."""
     n_qualities = len(quality_bitrates)
     bitrate = quality_bitrates[quality]
     
@@ -98,13 +111,22 @@ def compute_reward(
     return reward
 
 
+# ============================================================================
 # STUDENT ENTRYPOINT
+# ============================================================================
 def student_entrypoint(message: ClientMessage) -> int:
     """
-    args: 
+    Stateless UCB Multi-Armed Bandit for ABR.
+    
+    Advantages:
+    - Automatically balances exploration and exploitation
+    - No epsilon parameter to tune
+    - Theoretically optimal regret bounds
+    
+    Args: 
         message: ClientMessage with available qualities
     
-    returns:
+    Returns:
         Quality level (0 to num_qualities - 1)
     """
     global _bandit
@@ -123,6 +145,7 @@ def student_entrypoint(message: ClientMessage) -> int:
 
 
 def update_bandit_reward(message: ClientMessage, quality: int):
+    """Update bandit with reward signal (called after download)."""
     global _bandit
     
     if _bandit is None:
@@ -144,5 +167,6 @@ def update_bandit_reward(message: ClientMessage, quality: int):
 
 
 def reset_bandit():
+    """Reset bandit for new episode."""
     global _bandit
     _bandit = None
