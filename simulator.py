@@ -84,7 +84,7 @@ def read_test(config_path: str, print_output: bool):
 # ======================================================================================================================
 # MAIN
 # ======================================================================================================================
-def main(config_file: str, student_algo, verbose: bool, print_output=True) -> Tuple[float, float, float, float]:
+def main(config_file: str, student_algo, verbose: bool, print_output=True) -> Tuple[float, float, float, float, List]:
 	"""
 	Main loop. Runs the simulator with the given config file.
 	Args:
@@ -92,7 +92,7 @@ def main(config_file: str, student_algo, verbose: bool, print_output=True) -> Tu
 		student_algo: Student algorithm to run
 		verbose : Whether to print verbose output
 		print_output : Whether to print any output at all
-	:return: Tuple with the total quality, rebuffer time, total variation, and user QoE for this test
+	:return: Tuple with the total quality, rebuffer time, total variation, user QoE, and chunk QoE list for this test
 	"""
 	trace, logger, buffer, chunk_qualities, chunk_length = read_test(config_file, print_output)
 
@@ -145,7 +145,12 @@ def main(config_file: str, student_algo, verbose: bool, print_output=True) -> Tu
 	if print_output:
 		logger.output_results(verbose=verbose)
 
-	return logger.get_qual_rebuff_var_qoe()
+	if hasattr(student,'reset_state'):
+		student.reset_state()
+	
+	quality, rebuff, variation, qoe = logger.get_qual_rebuff_var_qoe()
+	return quality, variation, rebuff, qoe, logger.chunk_qoe
+	# return logger.get_qual_rebuff_var_qoe()
 
 
 if __name__ == '__main__':

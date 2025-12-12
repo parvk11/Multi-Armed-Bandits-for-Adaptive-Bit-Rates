@@ -16,6 +16,10 @@ class Scorecard:
         self.rebuffer_coeff = rebuffer_coeff
         self.switch_coeff = switch_coeff
         self.chunk_length = chunk_length
+        self.chunk_qoe = []
+        self.last_quality = None
+        self.total_variation = 0.0
+        self.total_rebuffer_time = 0.0
 
         self.chunk_info = []
         self.rebuffers = []
@@ -31,6 +35,16 @@ class Scorecard:
         self.chunk_info.append(
             {'arrival time': time, 'quality': quality, 'bitrate': bitrate}
         )
+        total_quality = self.get_total_quality() + quality*self.chunk_length
+        variation = 0
+        if self.last_quality is not None:
+            variation = abs(quality - self.last_quality)
+            self.total_variation += variation
+        self.last_quality = quality
+
+        self._pending_quality = quality
+        self._pending_variation = variation if self.last_quality is not None else 0
+        self._pending_rebuffer = 0
 
     def log_rebuffer(self, time: float, rebuffer_length: float, chunknum: int):
         """
@@ -44,7 +58,12 @@ class Scorecard:
             self.rebuffers.append(
                 {'time': time, 'rebuffer_length': rebuffer_length, 'chunknum': chunknum}
             )
-
+        
+        self.total_rebuffer_time += rebuffer_length
+        chunk_qoe = (
+            self.quality_coeff * self._pending_quality - self.switch_coeff * self._pending_variation - self.rebuffer_coeff * rebuffer_length
+        )
+        self.chunk_qoe.append(chunk_qoe)
     def count_switches(self, print_output: bool = False) -> int:
         """
         Counts the number of quality switches that have occurred since logging began.
