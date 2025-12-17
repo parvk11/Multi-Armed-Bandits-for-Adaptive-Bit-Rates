@@ -1,6 +1,6 @@
 from typing import List, Dict, Tuple
-from SMPyBandits.Policies import CUSUM_UCB, SlidingWindowUCB, DiscountedUCB
 import math
+from patched.SlidingWindowUCB import SWUCB
 
 bandits = {}
 last_quality = None
@@ -63,8 +63,7 @@ def get_or_create_bandit(state: Tuple[str, str], n_arms: int):
     if state_key not in bandits:
         # print(f"Creating new bandit for state {state_key}")
         
-       
-        bandit = SlidingWindowUCB.SWUCB(nbArms=n_arms, tau=20, alpha=0.7)
+        bandit = SWUCB(nbArms=n_arms, tau=20, alpha=0.7)
        
         bandit.startGame()
         bandits[state_key] = bandit

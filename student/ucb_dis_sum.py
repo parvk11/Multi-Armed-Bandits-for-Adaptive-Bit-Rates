@@ -1,5 +1,5 @@
 from typing import List, Union
-from SMPyBandits.Policies import DiscountedUCB
+from patched.DiscountedUCB import DiscountedUCB
 import math
 
 bandit = None

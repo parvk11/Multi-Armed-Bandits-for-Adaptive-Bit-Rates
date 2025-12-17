@@ -1,6 +1,6 @@
 from typing import List, Union
-from SMPyBandits.Policies import CUSUM_UCB
 import math
+from patched.CUSUM_UCB import CUSUM_IndexPolicy
 
 bandit = None
 initialized = False
@@ -122,11 +122,11 @@ def maybe_initialize_bandit(client: ClientMessage):
     if initialized:
         return
 
-    bandit = CUSUM_UCB.CUSUM_IndexPolicy(
+    bandit = CUSUM_IndexPolicy(
         nbArms=client.quality_levels,
         max_nb_random_events=50,
         horizon=90,
-        lmbda=3.0,
+        lmbda=3,
         min_number_of_observation_between_change_point=5,
         full_restart_when_refresh=False,
         per_arm_restart=True,

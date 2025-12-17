@@ -1,5 +1,6 @@
 from typing import List, Dict, Tuple
-from SMPyBandits.Policies import CUSUM_UCB, SlidingWindowUCB, DiscountedUCB
+# from SMPyBandits.Policies.CUSUM_UCB import CUSUM_IndexPolicy
+from patched.CUSUM_UCB import CUSUM_IndexPolicy
 import math
 
 bandits = {}
@@ -63,11 +64,11 @@ def get_or_create_bandit(state: Tuple[str, str], n_arms: int):
     if state_key not in bandits:
         # print(f"Creating new bandit for state {state_key}")
         
-        bandit = CUSUM_UCB.CUSUM_IndexPolicy(
+        bandit = CUSUM_IndexPolicy(
             nbArms=n_arms,
             max_nb_random_events=50,
             horizon=90,
-            lmbda=3.0,  # Sensitivity - lower = more sensitive to changes
+            lmbda=3,  # Sensitivity - lower = more sensitive to changes
             min_number_of_observation_between_change_point=5,
             full_restart_when_refresh=False,
             per_arm_restart=True,

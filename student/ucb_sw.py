@@ -1,5 +1,5 @@
 from typing import List, Union
-from SMPyBandits.Policies import SlidingWindowUCB
+from patched.SlidingWindowUCB import SWUCB
 import math
 
 bandit = None
@@ -129,7 +129,7 @@ def maybe_initialize_bandit(client: ClientMessage):
     
     n_arms = client.quality_levels
     
-    bandit = SlidingWindowUCB.SWUCB(nbArms=n_arms, tau=20, alpha=0.7)
+    bandit = SWUCB(nbArms=n_arms, tau=20, alpha=0.7)
  
     bandit.startGame()
     initialized = True

@@ -1,7 +1,6 @@
 from typing import List, Dict, Tuple
-from SMPyBandits.Policies import CUSUM_UCB, SlidingWindowUCB, DiscountedUCB
 import math
-
+from patched.DiscountedUCB import DiscountedUCB
 bandits = {}
 last_quality = None
 previous_chunk_info = None
