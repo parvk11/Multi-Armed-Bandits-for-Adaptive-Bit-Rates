@@ -19,6 +19,7 @@
 
     ``` bash
     python mab_tester.py ALL
+    ```
 
     This will:
 
